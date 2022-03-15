@@ -97,34 +97,20 @@ async def kill(ctx, arg):
 @client.command()
 async def stab(ctx, arg):
     await ctx.send(f"{ctx.message.author.mention} Just stabbed {arg}")
-
-@client.command()
-@commands.is_nsfw()
-async def hehe(ctx):
-    hehe = ("Is Fucking a Tree. Why tho?", "Is streaking", "Is Being a SpectralWolf555 Hater O.o", " Needs to stop Fucking A Rock")
-    hehe2 = random.choice(hehe)
-    await ctx.send(ctx.message.author.mention + hehe2)
-
-@client.command()
-@commands.is_nsfw()
-async def screwlife(ctx):
-    life = ("just started banging life... WTF is wrong with them. And since when is life a person.", "uses their shot gun to shoot life in its face.....WHY WONT YOU DIE ALREADY!", "uses their sword to slash life..... WHAT HOW ARE YOU STILL ALIVE????!?!?!?!?", "Screams so unbearably loud that life dies.")
-    usedlife = random.choice(life)
-    await ctx.send(ctx.author.mention + ' ' + usedlife)
      
 @client.command()
 async def insult(ctx, arg):
-    insults = ("Screw you", "You are an Asshole", "You suck", "OH NO ITS", "Ugh, its", "EVERYBODY GET OUT, ITS", "Fuck its", "Well Shit... there's", "Fuck you", "Deal with it")
+    insults = ("Screw you", "You are a jerk", "You suck", "OH NO ITS", "Ugh, its", "EVERYBODY GET OUT, ITS", "Deal with it")
     await ctx.send(f"{random.choice(insults)} {arg}")
     
 @client.command()
 async def compliment(ctx, arg):
-    compliments = ("Is Looking nice today", "Is Awesome", "Is a good person", "Is nice", "Is A cool person", "Isn't a retard", "Needs to talk more")
+    compliments = ("Is Looking nice today", "Is Awesome", "Is a good person", "Is nice", "Is A cool person", "Isn't an idiot", "Needs to talk more")
     await ctx.send(f"{arg} {random.choice(compliments)}")
      
 @client.command()
 async def mental(ctx):
-    answers = ("Is Mentally Insane", "Is Mentally Stable", "Is Going Insane", "Needs therapy", "Needs a huge suppository", "Is Retarded", "Has Crippling Depression")
+    answers = ("Is Mentally Insane", "Is Mentally Stable", "Is Going Insane", "Needs therapy", "Needs a huge suppository", "Is an idiot", "Has Crippling Depression")
     await ctx.send(f"{ctx.author.mention} {random.choice(answers)}")
     
 @client.command()
@@ -147,18 +133,18 @@ async def createGameSave(ctx):
         await ctx.send("You Already Have Save Data")
 
 @client.command(name="8ball",
-                decription="Chooses Shit For You, maybe a little insulting",
+                decription="Chooses stuff For You, maybe a little insulting",
                 aliases=["Eight Ball", "8-ball", "eight ball", "8-Ball"],
                 pass_context=True)
 async def eight_ball(ctx):
     possible_responses = [
-            'Thats gonna have to be a FUCK no',
-            'It Is not looking likely Bitch',
-            'For Sure asshole',
+            'Thats gonna have to be a no',
+            'It Is not looking likely',
+            'For Sure you jerk',
             'Fuck you im not answering that',
-            'Might be Likely you dumbass',
+            'Might be Likely you idiot',
             'I dont care you piece of shit',
-            'Ok The answer is FUCK yes.', ]
+            'Ok The answer is FRICK yes.', ]
     await ctx.send(random.choice(possible_responses) + ", " + ctx.message.author.mention)
 
 @client.command(pass_context=True)
@@ -184,13 +170,6 @@ async def help(ctx, *, arg = ""):
         await ctx.send(embed=embed)
     elif arg == "admin":
         await ctx.send("You need admin perms to see these commands")
-    elif arg == "nsfw" and ctx.channel.is_nsfw():
-        embed.add_field(name="hehe", value="Sends innapropriate comments at your expense")
-        embed.add_field(name="screwlife", value="Killing life is fun!")
-        embed.add_field(name="frick", value="Have sex with someone, requires you to @ someone")
-        await ctx.send(embed=embed)
-    elif arg == "nsfw":
-        await ctx.send("You need to be in an NSFW channel to see those commands")
     else:
         embed.add_field(name = "meme", value = "Sends a meme off of the r/memes subreddit")
         embed.add_field(name="spam", value="Spam Something Fun")
@@ -203,15 +182,11 @@ async def help(ctx, *, arg = ""):
         embed.add_field(name="8ball", value="A (maybe insulting) 8Ball!")
         embed.add_field(name="death", value="Tells you where you are going when you die!")
         embed.add_field(name="help", value="Sends the command list!")
-        embed.add_field(name='After the Help Command', value='Add "nsfw" or "admin" to view those command lists')
+        embed.add_field(name="reddit", value="Searches a Sub you specify for an image! May not send image if it picks a non-media post.")
+        embed.add_field(name='After the Help Command', value='Add "admin" to view admin commands')
         embed.set_thumbnail(url="https://pic.onlinewebfonts.com/svg/img_261633.png")
         await ctx.send(embed=embed)
 
-@client.command(aliases=["frick", "screw"])
-@commands.is_nsfw()
-async def fuck(ctx, arg):
-    funnyaftertext = ["I did not need to know that", "lets watch", "Uhm, no", "KILL THEM"]
-    await ctx.send(f"{ctx.author.mention} is having sex with {arg}... {random.choice(funnyaftertext)}")
 
 @client.command()
 @commands.has_permissions(administrator=True)
@@ -300,4 +275,15 @@ async def reroll(ctx, channel : discord.TextChannel, id_ : int):
   winner = random.choice(users)
 
   await channel.send(f"Congrats the new winner is: {winner.mention} for the giveaway")
+    
+@client.command()
+async def reddit(ctx, arg):
+    embed = discord.Embed(title="", description="")
+
+    async with aiohttp.ClientSession() as cs:
+        async with cs.get(f'https://www.reddit.com/r/{arg}/new.json?sort=hot') as r:
+            res = await r.json()
+            embed.set_image(url=res['data']['children'] [random.randint(0, 20)]['data']['url'])
+            await ctx.send(embed=embed)
+
 client.run(TOKEN)
