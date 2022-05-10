@@ -1,3 +1,4 @@
+from ast import Await, ExceptHandler
 import random
 import discord
 import time
@@ -7,9 +8,6 @@ import asyncio
 from discord.ext.commands import Bot
 from discord.ext import commands, tasks
 import aiohttp
-import datetime
-
-
 
 BOT_PREFIX = ["sam ", "sam"]
 INTENTS = discord.Intents.default()
@@ -18,7 +16,6 @@ client = commands.Bot(command_prefix=BOT_PREFIX,
                       decription="Sam is a discord bot meant to make things easier and play some games.", intents=INTENTS, allowed_mentions = discord.AllowedMentions(users = True, everyone = True, replied_user=True, roles = True))
 
 client.remove_command('help')
-
 
 def convert(time):
   pos = ["s","m","h","d"]
@@ -53,7 +50,7 @@ async def on_ready():
         if statusNum == 1:
             await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name= ' Demon Slayer'))
         elif statusNum == 2:
-            await client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name = "sam help"))
+            await client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name = " sam help"))
         elif statusNum == 3:
             await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name = " Terraria with friends"))
         elif statusNum == 4:
@@ -163,13 +160,14 @@ async def help(ctx, *, arg = ""):
         title = "Help",
         color = discord.Color.blurple()
     )
-    if arg == "admin" and ctx.message.author.guild_permissions.administrator:
+    if arg == "admin":
         embed.add_field(name="purge", value="Resets the chat")
         embed.add_field(name="vote", value="Asks for people to vote for whatever you say.")
         embed.add_field(name = "giveaway", value = "Starts a giveaway!")
+        embed.add_field(name="ban", value="Bans someone")
+        embed.add_field(name="unban", value="Unbans someone")
+        embed.add_field(name="kick", value="Kicks someone")
         await ctx.send(embed=embed)
-    elif arg == "admin":
-        await ctx.send("You need admin perms to see these commands")
     else:
         embed.add_field(name = "meme", value = "Sends a meme off of the r/memes subreddit")
         embed.add_field(name="spam", value="Spam Something Fun")
@@ -277,13 +275,127 @@ async def reroll(ctx, channel : discord.TextChannel, id_ : int):
   await channel.send(f"Congrats the new winner is: {winner.mention} for the giveaway")
     
 @client.command()
-async def reddit(ctx, arg):
+async def reddit(ctx, *, arg):
     embed = discord.Embed(title="", description="")
-
+    sub = arg.replace(" ", "")
+    sub = sub.lower()
     async with aiohttp.ClientSession() as cs:
-        async with cs.get(f'https://www.reddit.com/r/{arg}/new.json?sort=hot') as r:
+        async with cs.get(f'https://www.reddit.com/r/{sub}/new.json?sort=hot') as r:
             res = await r.json()
             embed.set_image(url=res['data']['children'] [random.randint(0, 20)]['data']['url'])
             await ctx.send(embed=embed)
 
+@client.command()
+@commands.has_permissions(administrator = True)
+async def ban(ctx, member : discord.Member, reason=None):
+    """Bans a user"""
+    if reason == None:
+        await ctx.send(f"Woah {ctx.author.mention}, Make sure you provide a reason!")
+    else:
+        messageok = f"You have been banned from {ctx.guild.name} for {reason}"
+        await member.send(messageok)
+        await member.ban(reason=reason)
+
+@client.command()
+@commands.has_permissions(administrator = True)
+async def unban(ctx, *, member):
+    banned_users = await ctx.guild.bans()
+    member_name, member_discriminator = member.split("#")
+
+    for ban_entry in banned_users:
+        user = ban_entry.user
+
+        if (user.name, user.discriminator) == (member_name, member_discriminator):
+            await ctx.guild.unban(user)
+            await ctx.send(f'Unbanned {user.mention}')
+            return
+
+@client.command()
+async def kick(ctx, member: discord.Member, *, reason=None):
+
+    await member.kick(reason=reason)
+
+    await ctx.send(f'User {member} has been kicked.')
+
+@client.command(aliases=["newSave"])
+async def makeSave(ctx):
+    gamedata = {"money": 0, "pet": "none", "weapon": "none", "battlepasses": 0, "kills": 0, "job": "none"}
+    if os.path.isfile(f"{ctx.author.id}-save.dat") == False:
+        savePickle(f"{ctx.author.id}-save.dat", gamedata)
+        await ctx.send("Save Created")
+    else: 
+        await ctx.send("You already have a save")
+
+@client.command()
+@commands.cooldown(1, 30, commands.BucketType.user)
+async def job(ctx):
+    gamedata = loadPickle(f"{ctx.author.id}-save.dat")
+    if gamedata["job"] == "none":
+        embed = discord.Embed(title= "Job Huntin'")
+        jobchoices = ["Streamer", "Programmer", "Police", "Sports Player", "Artist", "Factory Worker", "Engineer", "Game Developer"]
+        job1 = random.choice(jobchoices)
+        jobchoices.remove(job1)
+        job2 = random.choice(jobchoices)
+        jobchoices.remove(job2)
+        job3 = random.choice(jobchoices)
+        embed.add_field(name="choice 1️⃣ is:", value=f"{job1}")
+        embed.add_field(name="choice 2️⃣ is:", value=f"{job2}")
+        embed.add_field(name="choice 3️⃣ is:", value=f"{job3}")
+        embed.add_field(name ="Choosing", value="react with cooresponding emoji to choose job")
+
+        msg = await ctx.send(embed=embed)
+        await msg.add_reaction("1️⃣")
+        await msg.add_reaction("2️⃣")
+        await msg.add_reaction("3️⃣")
+
+        check = lambda r, u: u == ctx.author and str(r.emoji) in "1️⃣2️⃣3️⃣" 
+        try: 
+            reaction, user = await client.wait_for("reaction_add", check=check, timeout=30)
+        except asyncio.TimeoutError:
+            await ctx.send("Timed out, please try again")
+            return
+
+        if str(reaction.emoji) == "1️⃣":
+            await ctx.send(f"You chose {job1} for your job")
+            gamedata["job"] = job1
+        if str(reaction.emoji) == "2️⃣":
+            await ctx.send(f"You chose {job2} for your job")
+            gamedata["job"] = job2
+        if str(reaction.emoji) == "3️⃣":
+            await ctx.send(f"You chose {job3} for your job")
+            gamedata["job"] = job3
+        
+        savePickle(f"{ctx.author.id}-save.dat", gamedata)
+    elif gamedata["job"] != "none":
+        validanswers = ["yes", "Yes", "no", "No"]
+        await ctx.send("Would You like to work?")
+        def check(message):
+            return message.author == ctx.author and message.content in validanswers
+        try:
+            yesNo = await client.wait_for('message', check=check, timeout=30)
+        except asyncio.TimeoutError:
+            await ctx.send("Timed out, Please try again.")
+            return
+        
+        YesNo = yesNo.content
+
+        if YesNo == "Yes" or YesNo == "yes":
+            await ctx.send(f'You chose to work as a(n) {gamedata["job"]}')
+            moneyearned = random.randint(20, 30)
+            await ctx.send(f"After working you earned {moneyearned}")
+            gamedata["money"] += moneyearned
+            await ctx.send(f'You have {gamedata["money"]} total money')
+        
+        savePickle(f"{ctx.author.id}-save.dat", gamedata)
+
+@client.command()
+async def shop(ctx):
+    embed = discord.Embed(title="Shop")
+
+    await ctx.send(embed=embed)
+
+@client.command()
+async def printSaveData(ctx):
+    gamedata = loadPickle(f"{ctx.author.id}-save.dat")
+    await ctx.send(gamedata)
 client.run(TOKEN)
