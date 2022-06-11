@@ -4,7 +4,7 @@ import random
 
 BOT_PREFIX = ["sam ", "sam", "Sam ", "Sam"]
 INTENTS = discord.Intents.default()
-TOKEN = "OTAwMDQ3MzYyODc2MTI1MTg1.YW7obQ.eOaUZr2xkNKZTrCdimK_MKb-y_8"
+TOKEN = ""
 client = commands.Bot(command_prefix=BOT_PREFIX,
                       decription="Sam is a discord bot meant to make things easier and play some games.", intents=INTENTS, allowed_mentions = discord.AllowedMentions(users = True, everyone = True, replied_user=True, roles = True))
 
